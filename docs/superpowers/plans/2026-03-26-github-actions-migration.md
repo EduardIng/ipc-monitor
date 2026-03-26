@@ -123,6 +123,8 @@ Expected: FAIL — `_parse_app` not defined yet, `config.py` still has hardcoded
 
 - [ ] **Step 3: Rewrite `config.py`**
 
+> **Note:** `CHECK_HOURS` (previously defined here) is dropped — confirmed by grep that it is not imported anywhere else in the codebase. `TIMEZONE` is kept because `scraper.py` may depend on it indirectly via pytz.
+
 ```python
 import os
 
@@ -177,7 +179,7 @@ git commit -m "feat: read config from environment variables"
 
 - [ ] **Step 1: Update test fixtures and assertions in `tests/test_notifier.py`**
 
-Replace the two fixture dicts at the top and update all label assertions:
+**Preserve the existing import block at the top of the file** (`import pytest`, `from unittest.mock import patch, MagicMock`, `import notifier`). Only replace lines 5–36: the two fixture dicts and the five `build_message` test functions. Leave `test_send_telegram_calls_api` and `test_send_error_sends_correct_message` exactly as-is.
 
 ```python
 # Replace existing APP_TP and APP_ZM with alias-aware versions:
@@ -297,7 +299,7 @@ logging.basicConfig(
 )
 ```
 
-Also remove the `LOG_FILE` line above it (line 15) — it's no longer used.
+Also remove the `LOG_FILE` line above it (line 15). It is safe to delete: `LOG_FILE` is only referenced in the `FileHandler(LOG_FILE, ...)` call being removed — nowhere else in the file.
 
 - [ ] **Step 2: Run full test suite**
 
