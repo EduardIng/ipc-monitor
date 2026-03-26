@@ -29,7 +29,7 @@ RETRY_COUNT = 3
 RETRY_PAUSE = 30  # seconds
 
 
-def _check_with_retry(app) -> str | None:
+def check_with_retry(app) -> str | None:
     key = get_app_key(app)
     for attempt in range(1, RETRY_COUNT + 1):
         try:
@@ -47,15 +47,11 @@ def _check_with_retry(app) -> str | None:
     return None
 
 
-def main():
-    logger.info("=" * 60)
-    logger.info("IPC Monitor check started")
-
-    data = load_cache()
-
+def run_check(data):
+    """Check all applications and notify if needed. Modifies data in place."""
     for app in config.APPLICATIONS:
         key = get_app_key(app)
-        status = _check_with_retry(app)
+        status = check_with_retry(app)
 
         if status is None:
             logger.error(f"All {RETRY_COUNT} attempts failed for {key} — sending error")
@@ -75,6 +71,12 @@ def main():
         else:
             logger.info(f"No notification needed for {key} (already notified)")
 
+
+def main():
+    logger.info("=" * 60)
+    logger.info("IPC Monitor check started")
+    data = load_cache()
+    run_check(data)
     save_cache(data)
     logger.info("IPC Monitor check completed")
     logger.info("=" * 60)

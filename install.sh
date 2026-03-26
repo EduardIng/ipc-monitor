@@ -45,25 +45,28 @@ echo "Installing Playwright Chromium (this may take a minute)…"
 "$VENV_DIR/bin/playwright" install chromium
 echo "✅ Playwright Chromium installed"
 
-# 5. Generate plist with real paths
+# 5. Generate plists with real paths
 mkdir -p "$LAUNCH_AGENTS"
 VENV_PYTHON="$VENV_DIR/bin/python"
 
-sed \
-    -e "s|__VENV_PYTHON__|$VENV_PYTHON|g" \
-    -e "s|__PROJECT_DIR__|$PROJECT_DIR|g" \
-    -e "s|__HOME__|$HOME|g" \
-    "$PROJECT_DIR/com.ipc.monitor.plist" > "$FINAL_PLIST"
+_install_plist() {
+    local name="$1"
+    local src="$PROJECT_DIR/$name.plist"
+    local dst="$LAUNCH_AGENTS/$name.plist"
+    sed \
+        -e "s|__VENV_PYTHON__|$VENV_PYTHON|g" \
+        -e "s|__PROJECT_DIR__|$PROJECT_DIR|g" \
+        -e "s|__HOME__|$HOME|g" \
+        "$src" > "$dst"
+    if launchctl list | grep -q "$name" 2>/dev/null; then
+        launchctl unload "$dst" 2>/dev/null || true
+    fi
+    launchctl load "$dst"
+    echo "✅ $name registered"
+}
 
-echo "✅ plist written to $FINAL_PLIST"
-
-# 6. Register with launchd
-if launchctl list | grep -q "$PLIST_NAME" 2>/dev/null; then
-    echo "Unloading existing launchd job…"
-    launchctl unload "$FINAL_PLIST" 2>/dev/null || true
-fi
-launchctl load "$FINAL_PLIST"
-echo "✅ launchd job registered"
+_install_plist "com.ipc.monitor"
+_install_plist "com.ipc.bot"
 
 # 7. Done — manual test instructions
 echo ""
