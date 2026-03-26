@@ -137,8 +137,8 @@ After repo creation, set these four secrets in repo Settings → Secrets → Act
 
 | Secret name | Value |
 |-------------|-------|
-| `BOT_TOKEN` | `REDACTED_BOT_TOKEN` |
-| `CHAT_ID`   | `REDACTED_CHAT_ID` |
+| `BOT_TOKEN` | *(retrieve from local secure storage — not stored in this file)* |
+| `CHAT_ID`   | *(retrieve from local secure storage — not stored in this file)* |
 | `APP_TRV`   | `35015,TP,2025` |
 | `APP_WRK`   | `18953,ZM,2026` |
 
