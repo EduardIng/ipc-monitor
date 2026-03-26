@@ -1,50 +1,55 @@
 # IPC Monitor — Progress
 
-_Last updated: 2026-03-26_
+_Last updated: 2026-03-27_
 
 ## Поточний статус заявок
 
-| Заявка | Статус | Остання перевірка | Повідомлення надіслано |
-|--------|--------|-------------------|------------------------|
-| 35015/TP-2025 | 🔴 zpracovává se | 2026-03-26 | 2026-03-26 |
-| 18953/ZM-2026 | 🔴 zpracovává se | 2026-03-26 | 2026-03-26 |
+| Аліас | Заявка | Статус | Остання перевірка |
+|-------|--------|--------|-------------------|
+| TRV | 35015/TP-2025 | 🔴 zpracovává se | 2026-03-27 |
+| WRK | 18953/ZM-2026 | 🔴 zpracovává se | 2026-03-27 |
 
 ## Статус проекту
 
-**Встановлено і працює.**
+**Працює в хмарі 24/7 (GitHub Actions).**
 
-- ✅ Scraper підключився до ipc.gov.cz і зчитав статус обох заявок
-- ✅ Telegram повідомлення надіслані (перевірка 2026-03-26 21:37)
-- ✅ launchd зареєстровано: автоматичні перевірки 08:00 / 11:00 / 14:00 / 17:00
-- ✅ Telegram бот слухає повідомлення — будь-яке повідомлення → миттєва перевірка
+- ✅ Scraper підключується до ipc.gov.cz і читає статус обох заявок
+- ✅ Telegram повідомлення надіслані (перевірено 2026-03-27, аліаси TRV/WRK)
+- ✅ GitHub Actions: автоматичні перевірки 08:00 / 11:00 / 14:00 / 17:00 Prague (зима)
+- ✅ GitHub Actions Cache: status_cache.json зберігається між запусками
+- ✅ Дублікати подавлені: другий запуск не надіслав повідомлення (кеш працює)
+- ✅ Секрети в GitHub Actions Secrets — не в коді
 - ✅ Shuffle-bag фрази: 41 фраза, не повторюється поки всі не використані
-- ✅ 19/19 unit tests проходять
+- ✅ 25/25 unit tests проходять
+- ⚠️ Telegram bot polling (ad hoc перевірки) — працював локально, не мігрований в хмару
 
 ## Файли проекту
 
 | Файл | Призначення | Стан |
 |------|------------|------|
-| `monitor.py` | Планові перевірки (4×/день) | ✅ |
-| `bot.py` | Telegram polling — ad hoc перевірки | ✅ |
-| `scraper.py` | Playwright → ipc.gov.cz | ✅ виправлено (React Select, cookie consent) |
+| `monitor.py` | Планові перевірки (single-shot, 4×/день) | ✅ stdout logging |
+| `scraper.py` | Playwright → ipc.gov.cz | ✅ React Select, cookie consent |
 | `cache.py` | Кеш статусів + shuffle-bag фраз | ✅ |
-| `notifier.py` | Telegram повідомлення | ✅ |
+| `notifier.py` | Telegram повідомлення (аліаси TRV/WRK) | ✅ |
 | `phrases.py` | Парсер phrases.md | ✅ |
 | `phrases.md` | 41 фраза для статусу "в обробці" | ✅ |
-| `config.py` | Токени і дані заявок | ✅ токени вставлені |
-| `status_cache.json` | Останній статус + phrases_pool | ✅ актуальний |
-| `install.sh` | Встановлення одною командою | ✅ реєструє обидва launchd jobs |
-| `com.ipc.monitor.plist` | launchd: планові перевірки | ✅ завантажено |
-| `com.ipc.bot.plist` | launchd: bot polling (KeepAlive) | ✅ завантажено |
-| `ipc_monitor.log` | Логи | ✅ пише |
-| `tests/` | Unit tests | ✅ 19/19 pass |
+| `config.py` | Читає з os.environ (без hardcode) | ✅ |
+| `status_cache.json` | Останній статус + phrases_pool | ✅ GitHub Actions Cache |
+| `.github/workflows/monitor.yml` | GitHub Actions workflow | ✅ ubuntu-22.04 |
+| `tests/conftest.py` | Env vars для тестів | ✅ |
+| `tests/test_cache.py` | Тести кешу | ✅ |
+| `tests/test_config.py` | Тести config env vars | ✅ |
+| `tests/test_notifier.py` | Тести повідомлень | ✅ |
 
-## Launchd jobs
+## GitHub Actions
 
-| Job | Тип | Розклад |
-|-----|-----|---------|
-| `com.ipc.monitor` | StartCalendarInterval | 08:00, 11:00, 14:00, 17:00 |
-| `com.ipc.bot` | KeepAlive (постійно) | завжди активний |
+| Параметр | Значення |
+|----------|---------|
+| Репозиторій | https://github.com/EduardIng/ipc-monitor |
+| Runner | ubuntu-22.04 |
+| Cron | `0 7,10,13,16 * * *` UTC |
+| Секрети | BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK |
+| Cache key | `status-cache` (статичний, не інвалідується) |
 
 ## Відомі факти про сайт
 
@@ -85,22 +90,22 @@ asyncio.run(debug())
 EOF
 ```
 
-## Git log
+## Наступні кроки
+
+- [ ] **Рандомізація часу перевірок** — запуски в межах ±3 хвилин від 08/11/14/17 Prague
+  Spec: `docs/superpowers/plans/2026-03-27-random-timing.md`
+
+## Git log (останні)
 
 ```
-ee7d922 feat: add Telegram bot polling — any message triggers ad hoc check
-0ce474e feat: shuffle-bag phrase rotation — 41 phrases, no repeats until all used
-bb71a9d docs: add list C with one folkloric phrase
-5c06b51 docs: add phrase lists A and B for processing status messages
-40a148d docs: add progress.md with current project status
-b3a21cb fix: add 'kladně' to approved keywords (IPC uses 'vyhodnoceno kladně')
-efa3c33 fix: update scraper for React Select, cookie consent, correct button text; adapt to Python 3.9
-5613cd8 feat: add launchd plist and install script
-7a8a1ea feat: add main monitor orchestrator with retry and logging
-fe964a5 feat: add Playwright scraper for ipc.gov.cz Vue form
-0745b79 feat: add notifier module with Telegram message logic
-9d91fe2 fix: treat all approved variants as equivalent in should_notify
-404b2b8 feat: add cache module with status persistence logic
-7846d48 feat: add project scaffold (config, requirements, CLAUDE.md)
-928e817 chore: add design spec and implementation plan
+98a1dd9 fix: remove unused pytest import from conftest
+f20b707 fix: pin runner to ubuntu-22.04 (libasound2 missing on 24.04)
+182cf6c feat: add GitHub Actions workflow for scheduled monitoring
+17cfb17 feat: log to stdout only (removes local file handler)
+68a74cc feat: use application alias (TRV/WRK) in Telegram messages
+080c792 feat: read config from environment variables
+30d47ed test: add conftest to set env vars before config import
+38b1519 docs: fix plan per reviewer — clarify CHECK_HOURS drop, test edit scope, LOG_FILE safety
+d640087 docs: add migration plan; scrub credentials from spec and plan docs
+09f12a8 docs: add GitHub Actions migration design spec
 ```
