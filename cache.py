@@ -30,8 +30,9 @@ def should_notify(cache, app_key, status):
     is_processing = "zpracovává se" in status_lower
 
     if is_approved:
-        # Notify only if status changed (i.e. wasn't already approved)
-        return entry.get("last_status", "").lower() != status_lower
+        prev_status_lower = entry.get("last_status", "").lower()
+        was_approved = any(w in prev_status_lower for w in ["approved", "schváleno", "povolen"])
+        return not was_approved  # Only notify if wasn't previously in any approved state
 
     if is_processing:
         # Notify once per day

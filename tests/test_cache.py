@@ -59,6 +59,12 @@ def test_should_notify_approved_already_notified():
     assert cache.should_notify(c, "35015/TP-2025", "schváleno") is False
 
 
+def test_should_notify_approved_variant_change_no_double_notify():
+    """If status was schváleno and now is povolen, don't notify again (both are approved)."""
+    c = {"35015/TP-2025": {"last_status": "schváleno", "last_notified_date": "2026-01-01"}}
+    assert cache.should_notify(c, "35015/TP-2025", "pobyt povolen") is False
+
+
 def test_should_notify_other_status_new():
     c = {}
     assert cache.should_notify(c, "35015/TP-2025", "nějaký jiný stav") is True
