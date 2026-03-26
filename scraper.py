@@ -1,49 +1,76 @@
 """
 Playwright scraper for https://ipc.gov.cz/informace-o-stavu-rizeni/
 
-The page uses Vue.js with custom dropdown components (likely vue-select).
-Dropdowns are NOT native <select> — interact by clicking trigger, then
-clicking the matching list item by its text content.
+The page uses React Select dropdowns (class "react-select__control").
+Dropdowns are NOT native <select> — click the control to open, then
+click the matching option by text content.
 
-If selectors break after site updates, inspect the page with:
-    chromium --headless=new --dump-dom https://ipc.gov.cz/informace-o-stavu-rizeni/
-or run scraper.py with headless=False to watch the browser.
+Cookie consent dialog appears on first load — dismissed automatically.
+
+If selectors break after site updates, run with headless=False to debug:
+    change headless=True → headless=False in check_application()
 """
 import asyncio
 import logging
 
-from playwright.async_api import async_playwright, TimeoutError as PWTimeout
+from playwright.async_api import async_playwright
 
 logger = logging.getLogger(__name__)
 
 URL = "https://ipc.gov.cz/informace-o-stavu-rizeni/"
-TIMEOUT = 30_000  # ms
+TIMEOUT = 60_000  # ms — increased from 30s; site loads React components slowly
+
+
+async def _dismiss_cookies(page):
+    """Dismiss cookie consent banner if present."""
+    try:
+        btn = page.locator('button:has-text("ODMÍTNOUT")')
+        if await btn.count() > 0:
+            await btn.first.click(timeout=5000)
+            logger.debug("Cookie consent dismissed")
+    except Exception:
+        pass  # No cookie dialog or already dismissed
+
+
+async def _select_react_dropdown(page, nth: int, option_text: str):
+    """
+    Open the nth react-select dropdown on the page (0-indexed) and select
+    the option whose text contains option_text.
+    """
+    controls = page.locator(".react-select__control")
+    await controls.nth(nth).click(timeout=TIMEOUT)
+    # Wait for options menu
+    await page.wait_for_selector(".react-select__menu", timeout=TIMEOUT)
+    # Click the matching option
+    option = page.locator(f".react-select__option:has-text('{option_text}')").first
+    await option.click(timeout=TIMEOUT)
+    # Wait for menu to close
+    await page.wait_for_selector(".react-select__menu", state="hidden", timeout=TIMEOUT)
 
 
 async def _fill_form_and_get_status(page, number: str, typ: str, year: str) -> str:
     await page.goto(URL, timeout=TIMEOUT)
+    await page.wait_for_load_state("networkidle", timeout=TIMEOUT)
+
+    await _dismiss_cookies(page)
 
     # --- Reference number ---
     await page.wait_for_selector('input[name="proceedings.referenceNumber"]', timeout=TIMEOUT)
     await page.fill('input[name="proceedings.referenceNumber"]', number)
 
-    # --- Typ řízení dropdown ---
-    # Vue-select: the visible trigger is a div with role="combobox" or class "vs__search"
-    # Strategy: find the fieldset/div labelled "Typ řízení", click its dropdown trigger
-    await _select_dropdown(page, label_text="Typ řízení", option_text=typ)
+    # --- Typ řízení (1st react-select on the form, index 0) ---
+    await _select_react_dropdown(page, nth=0, option_text=typ)
 
-    # --- Rok dropdown ---
-    await _select_dropdown(page, label_text="Rok", option_text=year)
+    # --- Rok (2nd react-select on the form, index 1) ---
+    await _select_react_dropdown(page, nth=1, option_text=year)
 
-    # --- Submit ---
-    await page.click('button:has-text("Ověřit")')
+    # --- Submit (button text is uppercase on the site) ---
+    await page.click('button:has-text("OVĚŘIT")', timeout=TIMEOUT)
 
     # --- Wait for result ---
-    # The result appears in an .alert element or a div with role="alert"
-    result_selector = '.alert, [role="alert"], .result-message, [class*="result"]'
+    result_selector = '.alert, [role="alert"], [class*="notification"], [class*="result-text"]'
     await page.wait_for_selector(result_selector, timeout=TIMEOUT)
 
-    # Get all matching elements and return the most relevant text
     elements = await page.query_selector_all(result_selector)
     texts = []
     for el in elements:
@@ -54,50 +81,9 @@ async def _fill_form_and_get_status(page, number: str, typ: str, year: str) -> s
     return " | ".join(texts) if texts else ""
 
 
-async def _select_dropdown(page, label_text: str, option_text: str):
-    """
-    Open a Vue-select dropdown identified by its nearby label text,
-    then click the option matching option_text.
-    """
-    # Find the dropdown container near the label
-    label = page.locator(f'label:has-text("{label_text}")')
-    count = await label.count()
-
-    if count > 0:
-        # Click the dropdown toggle within the same form group as this label
-        parent = label.locator("xpath=..")
-        toggle = parent.locator(".vs__dropdown-toggle, [class*='dropdown-toggle'], [class*='select']").first
-        await toggle.click()
-    else:
-        # Fallback: find any clickable element with the label text
-        await page.click(f'text="{label_text}"')
-
-    # Wait for options list to appear
-    await page.wait_for_selector(
-        ".vs__dropdown-menu, [class*='dropdown-menu'], [class*='dropdown-list']",
-        timeout=TIMEOUT,
-    )
-
-    # Click the option matching the text
-    option = page.locator(
-        f".vs__dropdown-menu li:has-text('{option_text}'), "
-        f"[class*='dropdown-menu'] li:has-text('{option_text}'), "
-        f"[class*='dropdown-option']:has-text('{option_text}')"
-    ).first
-    await option.click()
-
-    # Wait for dropdown to close
-    await page.wait_for_selector(
-        ".vs__dropdown-menu, [class*='dropdown-menu']",
-        state="hidden",
-        timeout=TIMEOUT,
-    )
-
-
 async def check_application(number: str, typ: str, year: str) -> str:
     """
     Returns the status text from the page, or raises an exception.
-    Called once per application per check run.
     """
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)

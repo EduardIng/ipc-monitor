@@ -1,6 +1,6 @@
 # ~/ipc-monitor/config.py
-BOT_TOKEN = "ВСТАВИТИ_ПІСЛЯ_СТВОРЕННЯ_БОТА"  # set before first run
-CHAT_ID = "ВСТАВИТИ_ПІСЛЯ_ОТРИМАННЯ"          # set before first run
+BOT_TOKEN = "REDACTED_BOT_TOKEN"
+CHAT_ID = "REDACTED_CHAT_ID"
 TIMEZONE = "Europe/Prague"
 CHECK_HOURS = [8, 11, 14, 17]
 

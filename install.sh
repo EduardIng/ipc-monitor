@@ -10,10 +10,10 @@ FINAL_PLIST="$LAUNCH_AGENTS/$PLIST_NAME.plist"
 echo "=== IPC Monitor Installer ==="
 echo ""
 
-# 1. Check Python 3.11+
-PYTHON=$(command -v python3.11 || command -v python3 || true)
+# 1. Check Python 3.9+
+PYTHON=$(command -v python3.11 || command -v python3.10 || command -v python3.9 || command -v python3 || true)
 if [ -z "$PYTHON" ]; then
-    echo "❌ Python 3.11+ not found. Install via: brew install python@3.11"
+    echo "❌ Python 3.9+ not found. Install via: brew install python@3.11"
     exit 1
 fi
 
@@ -21,8 +21,8 @@ PY_VER=$("$PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version
 PY_MAJOR=$(echo "$PY_VER" | cut -d. -f1)
 PY_MINOR=$(echo "$PY_VER" | cut -d. -f2)
 
-if [ "$PY_MAJOR" -lt 3 ] || ([ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 11 ]); then
-    echo "❌ Python $PY_VER found, need 3.11+. Install via: brew install python@3.11"
+if [ "$PY_MAJOR" -lt 3 ] || ([ "$PY_MAJOR" -eq 3 ] && [ "$PY_MINOR" -lt 9 ]); then
+    echo "❌ Python $PY_VER found, need 3.9+. Install via: brew install python@3.11"
     exit 1
 fi
 echo "✅ Python $PY_VER found at $PYTHON"
