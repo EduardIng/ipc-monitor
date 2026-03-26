@@ -1,5 +1,4 @@
 import os
-import pytest
 
 # Set env vars before any test module imports config
 os.environ.setdefault("BOT_TOKEN", "test_token")
