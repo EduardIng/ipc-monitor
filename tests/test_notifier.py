@@ -2,36 +2,36 @@ import pytest
 from unittest.mock import patch, MagicMock
 import notifier
 
-APP_TP = {"number": "35015", "type": "TP", "year": "2025"}
-APP_ZM = {"number": "18953", "type": "ZM", "year": "2026"}
+APP_TP = {"number": "35015", "type": "TP", "year": "2025", "alias": "TRV"}
+APP_ZM = {"number": "18953", "type": "ZM", "year": "2026", "alias": "WRK"}
 
 
 def test_build_message_processing():
     msg = notifier.build_message(APP_TP, "Vaše žádost se zpracovává se.")
-    assert "🔴 Заявка 35015/TP-2025" in msg
+    assert "🔴 Заявка TRV" in msg
     assert "покидьки" in msg
 
 
 def test_build_message_approved_schvaleno():
     msg = notifier.build_message(APP_TP, "Žádost byla schváleno.")
-    assert "🟢 Заявка 35015/TP-2025" in msg
+    assert "🟢 Заявка TRV" in msg
     assert "Уроди" in msg
 
 
 def test_build_message_approved_povolen():
     msg = notifier.build_message(APP_ZM, "Pobyt povolen.")
-    assert "🟢 Заявка 18953/ZM-2026" in msg
+    assert "🟢 Заявка WRK" in msg
     assert "Уроди" in msg
 
 
 def test_build_message_approved_english():
     msg = notifier.build_message(APP_TP, "Application approved.")
-    assert "🟢 Заявка 35015/TP-2025" in msg
+    assert "🟢 Заявка TRV" in msg
 
 
 def test_build_message_other_status():
     msg = notifier.build_message(APP_TP, "Žádost zamítnuta.")
-    assert "⚠️ Заявка 35015/TP-2025" in msg
+    assert "⚠️ Заявка TRV" in msg
     assert "Žádost zamítnuta." in msg
     assert "Перевір сайт вручну!" in msg
 

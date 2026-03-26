@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_message(app, status, phrase=None):
-    key = f"{app['number']}/{app['type']}-{app['year']}"
+    label = app["alias"]
     s = status.lower()
 
     is_approved = any(w in s for w in ["approved", "schváleno", "povolen", "kladně"])
@@ -14,14 +14,14 @@ def build_message(app, status, phrase=None):
 
     if is_processing:
         text = phrase or "Ці покидьки досі пердять в лужу на твої податки, в морду б дав чесслово"
-        return f"🔴 Заявка {key}\n{text}"
+        return f"🔴 Заявка {label}\n{text}"
     if is_approved:
         return (
-            f"🟢 Заявка {key}\n"
+            f"🟢 Заявка {label}\n"
             f"Уроди доперли шо чехія без тебе загнеться, зачекай три дні а потім дзвони шоб знали хто тут батя"
         )
     return (
-        f"⚠️ Заявка {key}\n"
+        f"⚠️ Заявка {label}\n"
         f"Новий статус: {status}\n"
         f"Перевір сайт вручну!"
     )
