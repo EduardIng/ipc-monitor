@@ -12,16 +12,11 @@ from notifier import build_message, send_error, send_telegram
 from scraper import check_application
 
 # --- Logging setup ---
-LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ipc_monitor.log")
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
 
