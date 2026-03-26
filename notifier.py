@@ -9,7 +9,7 @@ def build_message(app, status):
     key = f"{app['number']}/{app['type']}-{app['year']}"
     s = status.lower()
 
-    is_approved = any(w in s for w in ["approved", "schváleno", "povolen"])
+    is_approved = any(w in s for w in ["approved", "schváleno", "povolen", "kladně"])
     is_processing = "zpracovává se" in s
 
     if is_processing:

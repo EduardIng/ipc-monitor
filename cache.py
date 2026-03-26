@@ -26,12 +26,13 @@ def should_notify(cache, app_key, status):
     today = date.today().isoformat()
     status_lower = status.lower()
 
-    is_approved = any(w in status_lower for w in ["approved", "schváleno", "povolen"])
+    APPROVED_KEYWORDS = ["approved", "schváleno", "povolen", "kladně"]
+    is_approved = any(w in status_lower for w in APPROVED_KEYWORDS)
     is_processing = "zpracovává se" in status_lower
 
     if is_approved:
         prev_status_lower = entry.get("last_status", "").lower()
-        was_approved = any(w in prev_status_lower for w in ["approved", "schváleno", "povolen"])
+        was_approved = any(w in prev_status_lower for w in APPROVED_KEYWORDS)
         return not was_approved  # Only notify if wasn't previously in any approved state
 
     if is_processing:
