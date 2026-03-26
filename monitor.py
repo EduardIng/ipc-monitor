@@ -7,7 +7,7 @@ import sys
 import time
 
 import config
-from cache import get_app_key, load_cache, save_cache, should_notify, update_cache
+from cache import get_app_key, get_next_phrase, load_cache, save_cache, should_notify, update_cache
 from notifier import build_message, send_error, send_telegram
 from scraper import check_application
 
@@ -67,7 +67,8 @@ def main():
             continue
 
         if should_notify(data, key, status):
-            msg = build_message(app, status)
+            phrase = get_next_phrase(data)
+            msg = build_message(app, status, phrase)
             send_telegram(msg)
             logger.info(f"Notification sent for {key}")
             update_cache(data, key, status)

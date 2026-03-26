@@ -1,6 +1,9 @@
 import json
 import os
+import random
 from datetime import date
+
+from phrases import load_phrases
 
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "status_cache.json")
 
@@ -48,3 +51,15 @@ def update_cache(cache, app_key, status):
         "last_status": status,
         "last_notified_date": date.today().isoformat(),
     }
+
+
+def get_next_phrase(data):
+    """Return next phrase using shuffle-bag: no repeats until all 41 used."""
+    phrases = load_phrases()
+    pool = data.get("phrases_pool", [])
+    if not pool:
+        pool = list(range(len(phrases)))
+        random.shuffle(pool)
+    idx = pool.pop(0)
+    data["phrases_pool"] = pool
+    return phrases[idx]
