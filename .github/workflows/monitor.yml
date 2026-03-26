@@ -1,0 +1,37 @@
+name: IPC Monitor
+
+on:
+  schedule:
+    - cron: "0 7,10,13,16 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: status_cache.json
+          # Static key is intentional: cache is never invalidated automatically.
+          # This ensures status_cache.json persists indefinitely across runs.
+          key: status-cache
+          restore-keys: status-cache
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run monitor
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          APP_TRV: ${{ secrets.APP_TRV }}
+          APP_WRK: ${{ secrets.APP_WRK }}
+        run: python monitor.py
