@@ -1,10 +1,16 @@
-# ~/ipc-monitor/config.py
-BOT_TOKEN = "REDACTED_BOT_TOKEN"
-CHAT_ID = "REDACTED_CHAT_ID"
+import os
+
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+CHAT_ID = os.environ["CHAT_ID"]
 TIMEZONE = "Europe/Prague"
-CHECK_HOURS = [8, 11, 14, 17]
+
+
+def _parse_app(env_var, alias):
+    number, typ, year = os.environ[env_var].split(",")
+    return {"number": number, "type": typ, "year": year, "alias": alias}
+
 
 APPLICATIONS = [
-    {"number": "35015", "type": "TP", "year": "2025"},
-    {"number": "18953", "type": "ZM", "year": "2026"},
+    _parse_app("APP_TRV", "TRV"),
+    _parse_app("APP_WRK", "WRK"),
 ]
