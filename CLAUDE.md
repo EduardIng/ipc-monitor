@@ -19,6 +19,7 @@
 - Playwright (headless Chromium) — НЕ requests/BeautifulSoup, сайт на Vue.js
 - Telegram Bot API через requests
 - **GitHub Actions** для розкладу (не launchd — ноутбук може бути вимкнений)
+- **bot.py** — локальний long-polling listener (launchd, KeepAlive) для ручних перевірок
 - GitHub Actions Cache для зберігання status_cache.json між запусками
 - GitHub Actions Secrets для токенів і даних заявок
 - Репозиторій: https://github.com/EduardIng/ipc-monitor (публічний)
@@ -56,15 +57,19 @@ Approved:
 - page.wait_for_selector() замість time.sleep()
 - Retry: 3 спроби з паузою 30 секунд
 - Попередній статус зберігається в status_cache.json (персистується через GitHub Actions Cache)
-- Секрети (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD) зберігаються в GitHub Actions Secrets — не в коді
+- GHA cache key: `status-cache-${{ github.run_id }}` з restore-keys `status-cache` — завжди зберігає після кожного запуску
+- GHA кешує pip (~/.cache/pip) і Playwright (~/.cache/ms-playwright) для швидкого запуску
+- Секрети (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD) зберігаються в GitHub Actions Secrets і в ~/Library/LaunchAgents/com.ipc.bot.plist (локально) — ніколи не в коді репозиторію
 - config.py читає всі значення з os.environ — hardcode відсутній
+- bot.py: stdout-only logging; env vars отримує через launchd plist (не через shell)
 - GitHub Actions runner: ubuntu-22.04 (не ubuntu-latest — libasound2 відсутній в Ubuntu 24.04)
-- Логування тільки в stdout (GitHub Actions захоплює автоматично)
+- Логування тільки в stdout (GitHub Actions захоплює автоматично; launchd → ipc_monitor.log)
 
 ## Структура файлів
 ~/ipc-monitor/
 ├── CLAUDE.md                        ← цей файл
-├── monitor.py                       ← основний скрипт (single-shot)
+├── monitor.py                       ← основний скрипт (single-shot, запускається GHA)
+├── bot.py                           ← Telegram long-polling listener (launchd, ручні перевірки)
 ├── config.py                        ← читає з os.environ (без hardcode)
 ├── cache.py                         ← логіка кешу + shuffle-bag фраз
 ├── notifier.py                      ← Telegram повідомлення (використовує alias)
@@ -73,12 +78,21 @@ Approved:
 ├── phrases.md                       ← 41 фраза для статусу "в обробці"
 ├── status_cache.json                ← кеш статусів (локально; в CI — GitHub Actions Cache)
 ├── requirements.txt                 ← залежності
+├── com.ipc.bot.plist                ← launchd template (плейсхолдери __BOT_TOKEN__ тощо)
+├── com.ipc.monitor.plist            ← launchd template (не використовується в поточній версії)
+├── install.sh                       ← встановлює venv, plist, Playwright
 ├── .github/workflows/monitor.yml   ← GitHub Actions workflow
-├── tests/                           ← unit tests (25 pass)
-│   ├── conftest.py                  ← env vars для тестів
+├── tests/                           ← unit tests
+│   ├── conftest.py                  ← env vars для тестів (APP_TRV, APP_WRK, APP_OLD)
 │   ├── test_cache.py
 │   ├── test_config.py
 │   └── test_notifier.py
 └── docs/superpowers/
     ├── specs/                       ← design docs
     └── plans/                       ← implementation plans
+
+## Секрети — де зберігаються
+⚠️ Ніколи не коміть реальні токени/ID в репозиторій!
+- **GitHub Actions**: Settings → Secrets → Actions (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD)
+- **Локально (bot.py)**: ~/Library/LaunchAgents/com.ipc.bot.plist — тільки на диску, не в репо
+- **Шаблон plist** у репо містить лише плейсхолдери (__BOT_TOKEN__, __CHAT_ID__ тощо)
