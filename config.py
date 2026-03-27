@@ -13,4 +13,5 @@ def _parse_app(env_var, alias):
 APPLICATIONS = [
     _parse_app("APP_TRV", "TRV"),
     _parse_app("APP_WRK", "WRK"),
+    _parse_app("APP_OLD", "OLD"),
 ]

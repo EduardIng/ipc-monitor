@@ -4,12 +4,13 @@
 При будь-яких сумнівах — читай цей файл першим.
 
 ## Мета проекту
-Автоматичний моніторинг двох заявок на дозвіл проживання в Чехії на сайті ipc.gov.cz.
+Автоматичний моніторинг трьох заявок на дозвіл проживання в Чехії на сайті ipc.gov.cz.
 Сповіщення через Telegram бота.
 
 ## Заявки
 - Заявка 1: номер 35015, тип TP, рік 2025 — аліас **TRV**
 - Заявка 2: номер 18953, тип ZM, рік 2026 — аліас **WRK**
+- Заявка 3: номер 30916, тип TP, рік 2025 — аліас **OLD**
 
 Аліаси відображаються в Telegram повідомленнях замість повного номера.
 
@@ -55,7 +56,7 @@ Approved:
 - page.wait_for_selector() замість time.sleep()
 - Retry: 3 спроби з паузою 30 секунд
 - Попередній статус зберігається в status_cache.json (персистується через GitHub Actions Cache)
-- Секрети (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK) зберігаються в GitHub Actions Secrets — не в коді
+- Секрети (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD) зберігаються в GitHub Actions Secrets — не в коді
 - config.py читає всі значення з os.environ — hardcode відсутній
 - GitHub Actions runner: ubuntu-22.04 (не ubuntu-latest — libasound2 відсутній в Ubuntu 24.04)
 - Логування тільки в stdout (GitHub Actions захоплює автоматично)

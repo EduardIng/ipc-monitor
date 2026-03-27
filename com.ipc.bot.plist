@@ -23,6 +23,16 @@
         <string>__HOME__</string>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>BOT_TOKEN</key>
+        <string>__BOT_TOKEN__</string>
+        <key>CHAT_ID</key>
+        <string>__CHAT_ID__</string>
+        <key>APP_TRV</key>
+        <string>__APP_TRV__</string>
+        <key>APP_WRK</key>
+        <string>__APP_WRK__</string>
+        <key>APP_OLD</key>
+        <string>__APP_OLD__</string>
     </dict>
 
     <key>WorkingDirectory</key>

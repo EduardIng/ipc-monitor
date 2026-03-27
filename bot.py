@@ -15,17 +15,14 @@ import requests
 
 import config
 from cache import get_app_key, get_next_phrase, load_cache, save_cache
-from monitor import check_with_retry, LOG_FILE, RETRY_COUNT
+from monitor import check_with_retry
 from notifier import build_message, send_error, send_telegram
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout),
-    ],
+    handlers=[logging.StreamHandler(sys.stdout)],
 )
 logger = logging.getLogger(__name__)
 

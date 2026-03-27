@@ -14,14 +14,26 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: status_cache.json
-          # Static key is intentional: cache is never invalidated automatically.
-          # This ensures status_cache.json persists indefinitely across runs.
-          key: status-cache
+          # run_id makes key unique so cache is always saved back after each run.
+          # restore-keys picks up the latest saved state.
+          key: status-cache-${{ github.run_id }}
           restore-keys: status-cache
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: pip-
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('requirements.txt') }}
+          restore-keys: playwright-chromium-
 
       - name: Install dependencies
         run: |
@@ -34,4 +46,5 @@ jobs:
           CHAT_ID: ${{ secrets.CHAT_ID }}
           APP_TRV: ${{ secrets.APP_TRV }}
           APP_WRK: ${{ secrets.APP_WRK }}
+          APP_OLD: ${{ secrets.APP_OLD }}
         run: python monitor.py
