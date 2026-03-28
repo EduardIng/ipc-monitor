@@ -19,7 +19,8 @@
 - Playwright (headless Chromium) — НЕ requests/BeautifulSoup, сайт на Vue.js
 - Telegram Bot API через requests
 - **GitHub Actions** для розкладу (не launchd — ноутбук може бути вимкнений)
-- **bot.py** — локальний long-polling listener (launchd, KeepAlive) для ручних перевірок
+- **bot.py** — локальний long-polling listener (launchd, KeepAlive) для ручних перевірок (тільки коли ноутбук увімкнений)
+- **bot.yml + adhoc.py** — GHA-based ручні перевірки: bot.yml опитує Telegram кожні 5 хв і запускає adhoc.py; працює навіть коли ноутбук вимкнений
 - GitHub Actions Cache для зберігання status_cache.json між запусками
 - GitHub Actions Secrets для токенів і даних заявок
 - Репозиторій: https://github.com/EduardIng/ipc-monitor (публічний)
@@ -58,6 +59,8 @@ Approved:
 - Retry: 3 спроби з паузою 30 секунд
 - Попередній статус зберігається в status_cache.json (персистується через GitHub Actions Cache)
 - GHA cache key: `status-cache-${{ github.run_id }}` з restore-keys `status-cache` — завжди зберігає після кожного запуску
+- adhoc.py НЕ викликає update_cache — тільки оновлює phrases_pool, не впливає на логіку "раз на день"
+- bot.yml зберігає telegram_offset.txt в кеші (ключ `telegram-offset-*`) щоб не обробляти одне повідомлення двічі
 - GHA кешує pip (~/.cache/pip) і Playwright (~/.cache/ms-playwright) для швидкого запуску
 - Секрети (BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD) зберігаються в GitHub Actions Secrets і в ~/Library/LaunchAgents/com.ipc.bot.plist (локально) — ніколи не в коді репозиторію
 - config.py читає всі значення з os.environ — hardcode відсутній
@@ -68,8 +71,9 @@ Approved:
 ## Структура файлів
 ~/ipc-monitor/
 ├── CLAUDE.md                        ← цей файл
-├── monitor.py                       ← основний скрипт (single-shot, запускається GHA)
-├── bot.py                           ← Telegram long-polling listener (launchd, ручні перевірки)
+├── monitor.py                       ← основний скрипт (single-shot, запускається GHA за розкладом)
+├── adhoc.py                         ← ad hoc перевірка (завжди надсилає, без should_notify; запускається GHA bot.yml)
+├── bot.py                           ← Telegram long-polling listener (launchd, ручні перевірки коли ноутбук увімкнений)
 ├── config.py                        ← читає з os.environ (без hardcode)
 ├── cache.py                         ← логіка кешу + shuffle-bag фраз
 ├── notifier.py                      ← Telegram повідомлення (використовує alias)
@@ -81,13 +85,14 @@ Approved:
 ├── com.ipc.bot.plist                ← launchd template (плейсхолдери __BOT_TOKEN__ тощо)
 ├── com.ipc.monitor.plist            ← launchd template (не використовується в поточній версії)
 ├── install.sh                       ← встановлює venv, plist, Playwright
-├── .github/workflows/monitor.yml   ← GitHub Actions workflow
+├── .github/workflows/monitor.yml   ← GitHub Actions scheduled workflow
+└── .github/workflows/bot.yml       ← GitHub Actions bot: poll Telegram */5min → запускає adhoc.py
 ├── tests/                           ← unit tests
 │   ├── conftest.py                  ← env vars для тестів (APP_TRV, APP_WRK, APP_OLD)
 │   ├── test_cache.py
 │   ├── test_config.py
 │   └── test_notifier.py
-└── docs/superpowers/
+├── docs/superpowers/
     ├── specs/                       ← design docs
     └── plans/                       ← implementation plans
 

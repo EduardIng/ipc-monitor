@@ -1,0 +1,110 @@
+name: IPC Bot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+
+jobs:
+  # Lightweight job: just poll Telegram, no deps needed.
+  # Runs every 5 minutes. Only the adhoc job installs playwright.
+  poll:
+    runs-on: ubuntu-22.04
+    outputs:
+      triggered: ${{ steps.poll.outputs.triggered }}
+    steps:
+      - uses: actions/cache@v4
+        with:
+          path: telegram_offset.txt
+          key: telegram-offset-${{ github.run_id }}
+          restore-keys: telegram-offset
+
+      - name: Poll Telegram for new messages
+        id: poll
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+        run: |
+          python3 << 'PYEOF'
+          import json, os, urllib.parse, urllib.request
+
+          bot_token = os.environ["BOT_TOKEN"]
+          chat_id = os.environ["CHAT_ID"]
+
+          offset = None
+          if os.path.exists("telegram_offset.txt"):
+              try:
+                  offset = int(open("telegram_offset.txt").read().strip())
+              except Exception:
+                  pass
+
+          params = {"timeout": 0, "allowed_updates": ["message"]}
+          if offset is not None:
+              params["offset"] = offset
+
+          url = (
+              f"https://api.telegram.org/bot{bot_token}/getUpdates?"
+              + urllib.parse.urlencode(params)
+          )
+          with urllib.request.urlopen(url, timeout=10) as resp:
+              updates = json.loads(resp.read()).get("result", [])
+
+          triggered = False
+          new_offset = offset
+          for update in updates:
+              new_offset = update["update_id"] + 1
+              msg = update.get("message", {})
+              if str(msg.get("chat", {}).get("id", "")) == str(chat_id):
+                  triggered = True
+
+          if new_offset is not None:
+              open("telegram_offset.txt", "w").write(str(new_offset))
+
+          flag = "true" if triggered else "false"
+          print(f"triggered={flag}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"triggered={flag}\n")
+          PYEOF
+
+  # Heavy job: only runs when a Telegram message was received.
+  adhoc:
+    needs: poll
+    if: needs.poll.outputs.triggered == 'true'
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: status_cache.json
+          key: status-cache-bot-${{ github.run_id }}
+          restore-keys: status-cache
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: pip-
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('requirements.txt') }}
+          restore-keys: playwright-chromium-
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run ad hoc check
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          APP_TRV: ${{ secrets.APP_TRV }}
+          APP_WRK: ${{ secrets.APP_WRK }}
+          APP_OLD: ${{ secrets.APP_OLD }}
+        run: python adhoc.py
