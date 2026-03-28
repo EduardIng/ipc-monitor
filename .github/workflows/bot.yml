@@ -2,7 +2,7 @@ name: IPC Bot
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/5 * * * 1-5"
 
 jobs:
   # Lightweight job: just poll Telegram, no Playwright needed.
