@@ -4,17 +4,14 @@ Lightweight Telegram poller for GitHub Actions bot.yml.
 Reads BOT_TOKEN and CHAT_ID from env, checks for new messages,
 writes triggered=true/false to GITHUB_OUTPUT.
 Persists last update_id via telegram_offset.txt (cached by GHA).
-No third-party dependencies — stdlib only.
 """
-import json
 import os
-import urllib.parse
-import urllib.request
 
-bot_token = os.environ.get("BOT_TOKEN", "")
-chat_id = os.environ.get("CHAT_ID", "")
+import requests
 
-# Diagnostic: confirm token is present without revealing it
+bot_token = os.environ.get("BOT_TOKEN", "").strip()
+chat_id = os.environ.get("CHAT_ID", "").strip()
+
 print(f"BOT_TOKEN: {'SET len=' + str(len(bot_token)) if bot_token else 'EMPTY'}")
 print(f"CHAT_ID: {'SET len=' + str(len(chat_id)) if chat_id else 'EMPTY'}")
 
@@ -33,12 +30,13 @@ params: dict = {"timeout": 0, "allowed_updates": ["message"]}
 if offset is not None:
     params["offset"] = offset
 
-url = (
-    f"https://api.telegram.org/bot{bot_token}/getUpdates?"
-    + urllib.parse.urlencode(params)
+resp = requests.get(
+    f"https://api.telegram.org/bot{bot_token}/getUpdates",
+    params=params,
+    timeout=10,
 )
-with urllib.request.urlopen(url, timeout=10) as resp:
-    updates = json.loads(resp.read()).get("result", [])
+resp.raise_for_status()
+updates = resp.json().get("result", [])
 
 triggered = False
 new_offset = offset
