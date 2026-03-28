@@ -11,8 +11,16 @@ import os
 import urllib.parse
 import urllib.request
 
-bot_token = os.environ["BOT_TOKEN"]
-chat_id = os.environ["CHAT_ID"]
+bot_token = os.environ.get("BOT_TOKEN", "")
+chat_id = os.environ.get("CHAT_ID", "")
+
+# Diagnostic: confirm token is present without revealing it
+print(f"BOT_TOKEN: {'SET len=' + str(len(bot_token)) if bot_token else 'EMPTY'}")
+print(f"CHAT_ID: {'SET len=' + str(len(chat_id)) if chat_id else 'EMPTY'}")
+
+if not bot_token:
+    print("ERROR: BOT_TOKEN is empty — check GitHub Actions secret name")
+    raise SystemExit(1)
 
 offset = None
 if os.path.exists("telegram_offset.txt"):
