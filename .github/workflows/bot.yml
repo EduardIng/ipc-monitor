@@ -3,6 +3,7 @@ name: IPC Bot
 on:
   schedule:
     - cron: "*/5 * * * 1-5"
+  workflow_dispatch:
 
 jobs:
   # Lightweight job: just poll Telegram, no Playwright needed.

@@ -7,8 +7,8 @@ Runs persistently via launchd (KeepAlive = true).
 """
 from __future__ import annotations
 import logging
-import os
 import sys
+import threading
 import time
 
 import requests
@@ -88,7 +88,7 @@ def poll():
                 chat_id = str(message.get("chat", {}).get("id", ""))
                 if chat_id == str(config.CHAT_ID):
                     logger.info("Ad hoc check triggered via Telegram")
-                    _ad_hoc_check()
+                    threading.Thread(target=_ad_hoc_check, daemon=True).start()
 
         except Exception as exc:
             logger.error(f"Polling error: {exc}")
