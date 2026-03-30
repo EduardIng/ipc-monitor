@@ -72,7 +72,7 @@ Approved:
 ~/ipc-monitor/
 ├── CLAUDE.md                        ← цей файл
 ├── monitor.py                       ← основний скрипт (single-shot, запускається GHA за розкладом)
-├── poll.py                          ← stdlib-only Telegram poller (запускається poll job в bot.yml; пише triggered= в GITHUB_OUTPUT)
+├── poll.py                          ← Telegram poller (requests; запускається poll job в bot.yml; пише triggered= в GITHUB_OUTPUT)
 ├── adhoc.py                         ← ad hoc перевірка (завжди надсилає, без should_notify; запускається GHA bot.yml)
 ├── bot.py                           ← Telegram long-polling listener (launchd, ручні перевірки коли ноутбук увімкнений)
 ├── config.py                        ← читає з os.environ (без hardcode)

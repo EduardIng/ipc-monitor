@@ -1,27 +1,30 @@
 # IPC Monitor — Progress
 
-_Last updated: 2026-03-27_
+_Last updated: 2026-03-30_
 
 ## Поточний статус заявок
 
 | Аліас | Заявка | Статус | Остання перевірка |
 |-------|--------|--------|-------------------|
-| TRV | 35015/TP-2025 | 🔴 zpracovává se | 2026-03-27 |
-| WRK | 18953/ZM-2026 | 🔴 zpracovává se | 2026-03-27 |
+| TRV | 35015/TP-2025 | 🔴 zpracovává se | 2026-03-30 |
+| WRK | 18953/ZM-2026 | 🔴 zpracovává se | 2026-03-30 |
+| OLD | 30916/TP-2025 | 🔴 zpracovává se | 2026-03-30 |
 
 ## Статус проекту
 
 **Працює в хмарі 24/7 (GitHub Actions).**
 
-- ✅ Scraper підключується до ipc.gov.cz і читає статус обох заявок
-- ✅ Telegram повідомлення надіслані (перевірено 2026-03-27, аліаси TRV/WRK)
-- ✅ GitHub Actions: автоматичні перевірки 08:00 / 11:00 / 14:00 / 17:00 Prague (зима)
+- ✅ Scraper підключується до ipc.gov.cz і читає статус всіх 3 заявок (TRV/WRK/OLD)
+- ✅ Telegram повідомлення надіслані (аліаси TRV/WRK/OLD)
+- ✅ GitHub Actions: автоматичні перевірки 09:00 / 12:00 / 15:00 / 18:00 Prague (літо, UTC+2)
 - ✅ GitHub Actions Cache: status_cache.json зберігається між запусками
-- ✅ Дублікати подавлені: другий запуск не надіслав повідомлення (кеш працює)
+- ✅ Дублікати подавлені: кеш працює
 - ✅ Секрети в GitHub Actions Secrets — не в коді
 - ✅ Shuffle-bag фрази: 41 фраза, не повторюється поки всі не використані
 - ✅ 25/25 unit tests проходять
-- ⚠️ Telegram bot polling (ad hoc перевірки) — працював локально, не мігрований в хмару
+- ✅ bot.yml: GHA polling Telegram кожні 5 хв (Mon-Fri) → запускає adhoc.py при повідомленні
+- ✅ bot.py: локальний long-polling (launchd) для миттєвих ad hoc перевірок коли ноутбук увімкнений
+- ✅ ad hoc check в bot.py виконується в background thread (не блокує poll loop при сні ноутбука)
 
 ## Файли проекту
 
@@ -35,7 +38,11 @@ _Last updated: 2026-03-27_
 | `phrases.md` | 41 фраза для статусу "в обробці" | ✅ |
 | `config.py` | Читає з os.environ (без hardcode) | ✅ |
 | `status_cache.json` | Останній статус + phrases_pool | ✅ GitHub Actions Cache |
-| `.github/workflows/monitor.yml` | GitHub Actions workflow | ✅ ubuntu-22.04 |
+| `bot.py` | Локальний Telegram long-polling (launchd) | ✅ background thread |
+| `adhoc.py` | Ad hoc перевірка для GHA (завжди надсилає) | ✅ |
+| `poll.py` | Lightweight Telegram poller для bot.yml | ✅ |
+| `.github/workflows/monitor.yml` | GitHub Actions scheduled workflow | ✅ ubuntu-22.04 |
+| `.github/workflows/bot.yml` | GHA bot: poll */5min → adhoc якщо є повідомлення | ✅ + workflow_dispatch |
 | `tests/conftest.py` | Env vars для тестів | ✅ |
 | `tests/test_cache.py` | Тести кешу | ✅ |
 | `tests/test_config.py` | Тести config env vars | ✅ |
@@ -48,7 +55,7 @@ _Last updated: 2026-03-27_
 | Репозиторій | https://github.com/EduardIng/ipc-monitor |
 | Runner | ubuntu-22.04 |
 | Cron | `0 7,10,13,16 * * *` UTC |
-| Секрети | BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK |
+| Секрети | BOT_TOKEN, CHAT_ID, APP_TRV, APP_WRK, APP_OLD |
 | Cache key | `status-cache` (статичний, не інвалідується) |
 
 ## Відомі факти про сайт
@@ -98,14 +105,10 @@ EOF
 ## Git log (останні)
 
 ```
-98a1dd9 fix: remove unused pytest import from conftest
-f20b707 fix: pin runner to ubuntu-22.04 (libasound2 missing on 24.04)
-182cf6c feat: add GitHub Actions workflow for scheduled monitoring
-17cfb17 feat: log to stdout only (removes local file handler)
-68a74cc feat: use application alias (TRV/WRK) in Telegram messages
-080c792 feat: read config from environment variables
-30d47ed test: add conftest to set env vars before config import
-38b1519 docs: fix plan per reviewer — clarify CHECK_HOURS drop, test edit scope, LOG_FILE safety
-d640087 docs: add migration plan; scrub credentials from spec and plan docs
-09f12a8 docs: add GitHub Actions migration design spec
+5319957 fix: restore bot.yml schedule, add workflow_dispatch, thread ad hoc check
+586aeb3 fix: restrict bot.yml poll to weekdays only (Mon-Fri)
+dd0bf58 fix: switch poll.py from urllib to requests + strip token whitespace
+678a19b debug: log BOT_TOKEN presence and length in poll.py
+dc479c9 fix: replace inline heredoc with poll.py to fix 401 on Telegram poll
+780e722 feat: skip weekends for scheduled checks (Mon-Fri only)
 ```
